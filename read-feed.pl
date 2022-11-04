@@ -5,8 +5,9 @@ use FindBin qw/$Bin/;
 use Data::Dump qw/dump/;
 use HTML::TreeBuilder;
 use JSON;
-use Postfedi qw/get_dbh $sql/;
 use lib "$FindBin::Bin";
+use Postfedi qw/get_dbh $sql/;
+
 use utf8;
 
 use open qw/ :std :encoding(utf8) /;
@@ -46,14 +47,16 @@ for my $item ( @{ $feed->{items} } ) {
 my $dbh     = get_dbh;
 my $db_urls = $dbh->selectall_hashref( $sql->{all_urls}, 'url' );
 my $sth     = $dbh->prepare( $sql->{insert_entry} ) or die $dbh->errstr;
+my $offset =0;
 for my $url ( keys %feed_data ) {
     if ( !exists $db_urls->{$url} ) {
         say "==> adding $url";
-        my $rv = $sth->execute( $url, time + 3600, $feed_data{$url} );
+        my $rv = $sth->execute( $url, time + 3600+$offset, $feed_data{$url} );
+	$offset += 30 * 60;
     }
 }
 
-sub recurse {
+sub recurse { # flatten the HTML tree into a list 
     my ( $node, $depth, $output ) = @_;
 
     my $unit;
