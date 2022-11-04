@@ -2,8 +2,8 @@
 use Modern::Perl '2015';
 use FindBin qw/$Bin/;
 use LWP;
-use Postfedi qw/get_dbh $sql/;
 use lib "$FindBin::Bin";
+use Postfedi qw/get_dbh $sql/;
 
 use utf8;
 use open qw/ :std :encoding(utf8) /;
@@ -39,9 +39,12 @@ my $content = $entry->[1];
 my $destination
     = "https://${CONFIG{'INSTANCE_HOST'}}/api/v1/statuses?access_token=${CONFIG{'API_ACCESS_TOKEN'}}";
 
-my $message = "New µblog post:\n\n\"$content\"\n\n$url";
-
-print "Posting [$message] to $CONFIG{'INSTANCE_HOST'}\n";
+my $message = "\"$content\"\n\n$url";
+say "Attempting to post: ";
+say "--------------------";
+say $message;
+say "--------------------";
+say "to $CONFIG{'INSTANCE_HOST'}...";
 
 my $browser  = LWP::UserAgent->new;
 my $response = $browser->post(
@@ -54,7 +57,7 @@ my $response = $browser->post(
 if ( $response->is_success ) {
     my $sth = $dbh->prepare( $sql->{update_status} ) or warn $dbh->errstr;
     $sth->execute($url);
-    print "Done!\n";
+    print "... done!\n";
 }
 else {
     print STDERR "Failed: ", $response->status_line, "\n";
