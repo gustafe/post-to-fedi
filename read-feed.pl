@@ -24,7 +24,7 @@ my $json_text = do {
 my $json = JSON->new();
 my $feed = $json->decode($json_text);
 my %feed_data;
-
+my $count = 0;
 for my $item ( @{ $feed->{items} } ) {
 
     my $tree = HTML::TreeBuilder->new_from_content( $item->{content_html} );
@@ -41,8 +41,11 @@ for my $item ( @{ $feed->{items} } ) {
     }
     $content = $content ? $content : 'NO CONTENT';
     $feed_data{ $item->{url} } = $content;
+    $count++;
 }
 
+#say "Number of items in feed: $count";
+# say "Items in feed: ", scalar keys %feed_data;
 # compare what we have to the stuff in the DB
 my $dbh     = get_dbh;
 my $db_urls = $dbh->selectall_hashref( $sql->{all_urls}, 'url' );
@@ -51,11 +54,34 @@ my $offset =0;
 for my $url ( keys %feed_data ) {
     if ( !exists $db_urls->{$url} ) {
         say "==> adding $url";
-        my $rv = $sth->execute( $url, time + 3600+$offset, $feed_data{$url} );
+	my $posted = $feed_data{$url} =~ /nopost/ ? 1 : 0;
+        my $rv = $sth->execute( $url, $posted, time + 3600+$offset, $feed_data{$url} );
 	$offset += 30 * 60;
+	say "DEBUG: Items in feed: $count";
     }
 }
 
+# check for old entries
+
+# my $count= 1;
+# my @deletes;
+# for my $url (sort {$a cmp $b} keys %$db_urls) {
+#     push @deletes, $url if $count>30;
+#     $count++;
+# }
+
+#$sth = $dbh->prepare( $sql->{delete_entry}) or die $dbh->errstr;
+
+#for my $url (@deletes) {
+#    my $rv = $sth->execute( $url ) or die $sth->errstr;
+#    if ($rv eq '0E0' ) {
+#	warn "no rows returned from delete of $url\n";
+#    }
+#}
+#say join("\n", @deletes) if @deletes>0;
+#my $rv = $dbh->do($sql->{delete_old});
+
+#say "$rv older entries removed" if $rv > 0 ;
 sub recurse { # flatten the HTML tree into a list 
     my ( $node, $depth, $output ) = @_;
 
