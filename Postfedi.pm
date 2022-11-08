@@ -28,8 +28,9 @@ our $sql = {
 	    all_urls=>qq{select url from entries},
 	    unposted=>qq{select url,content from entries where posted = 0 and age <= strftime('%s', 'now') order by url, age},
 	    update_status=>qq{update entries set posted = 1 where url=?},
-	    insert_entry=>qq{insert into entries (url, posted, age, content) values (?, 0 , ?, ? )},
+	    insert_entry=>qq{insert into entries (url, posted, age, content) values (?, ? , ?, ? )},
 	    status => qq{select url, posted, age, content from entries order by url desc},
+	    delete_entry=>qq{delete from entries where url=?},
 
 	   };
 
