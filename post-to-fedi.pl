@@ -39,7 +39,7 @@ my $content = $entry->[1];
 my $destination
     = "https://${CONFIG{'INSTANCE_HOST'}}/api/v1/statuses?access_token=${CONFIG{'API_ACCESS_TOKEN'}}";
 
-my $message = "🤖 \"$content\"\n\n$url";
+my $message = "🤖 $content\n\n$url";
 say "Attempting to post: ";
 say "--------------------";
 say $message;
