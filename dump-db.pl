@@ -20,7 +20,7 @@ for my $e (@$entries) {
     $posted = $posted?'yes':'no';
     my $timestamp = gmtime( $age );
     my $hours =  time-$age>0 ? sec_to_dhms(time-$age):time-$age;
-    $content = substr( $content,0, 30);
+#    $content = substr( $content,0, 30);
     printf("%2d. %-23s %3s %12s %s\n", $rownr, $url, $posted, $hours, $content);
     #    say join(',',($url, $posted, $hours, $content));
     $rownr++;
