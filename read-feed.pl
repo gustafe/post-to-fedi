@@ -31,15 +31,20 @@ for my $item ( @{ $feed->{items} } ) {
     my $out;
     $out = recurse( $tree, 0, $out );
 
-    my $content;
+    my @content;
     for my $idx ( 3 .. scalar @$out - 1 )
     {    # first 3 elements are html/head/body
         if ( $out->[$idx]{content} ) {
-            $content = $out->[$idx]{content};
-            last;
+            push @content, $out->[$idx]{content};
+#            last;
         }
     }
-    $content = $content ? $content : 'NO CONTENT';
+    my $content = $content[0] ? $content[0] : 'NO CONTENT';
+    if (scalar @content == 1 and $content ne 'NO CONTENT') { # only one piece of content
+	$content .= ' ∎';
+    } else {
+	$content .= ' […]';
+    }
     $feed_data{ $item->{url} } = $content;
     $count++;
 }
@@ -51,7 +56,7 @@ my $dbh     = get_dbh;
 my $db_urls = $dbh->selectall_hashref( $sql->{all_urls}, 'url' );
 my $sth     = $dbh->prepare( $sql->{insert_entry} ) or die $dbh->errstr;
 my $offset =0;
-for my $url ( keys %feed_data ) {
+for my $url ( sort keys %feed_data ) {
     if ( !exists $db_urls->{$url} ) {
         say "==> adding $url";
 	my $posted = $feed_data{$url} =~ /nopost/ ? 1 : 0;
@@ -61,27 +66,6 @@ for my $url ( keys %feed_data ) {
     }
 }
 
-# check for old entries
-
-# my $count= 1;
-# my @deletes;
-# for my $url (sort {$a cmp $b} keys %$db_urls) {
-#     push @deletes, $url if $count>30;
-#     $count++;
-# }
-
-#$sth = $dbh->prepare( $sql->{delete_entry}) or die $dbh->errstr;
-
-#for my $url (@deletes) {
-#    my $rv = $sth->execute( $url ) or die $sth->errstr;
-#    if ($rv eq '0E0' ) {
-#	warn "no rows returned from delete of $url\n";
-#    }
-#}
-#say join("\n", @deletes) if @deletes>0;
-#my $rv = $dbh->do($sql->{delete_old});
-
-#say "$rv older entries removed" if $rv > 0 ;
 sub recurse { # flatten the HTML tree into a list 
     my ( $node, $depth, $output ) = @_;
 
