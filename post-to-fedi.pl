@@ -37,9 +37,16 @@ my $url     = $entry->[0];
 my $content = $entry->[1];
 
 my $destination
-    = "https://${CONFIG{'INSTANCE_HOST'}}/api/v1/statuses?access_token=${CONFIG{'API_ACCESS_TOKEN'}}";
+  = "https://${CONFIG{'INSTANCE_HOST'}}/api/v1/statuses?access_token=${CONFIG{'API_ACCESS_TOKEN'}}";
 
-my $message = "🤖 $content\n\n$url";
+# my $message = "🤖 $content\n\n$url";
+my $message;
+if (substr ($content,-1) eq '⤵️'  or $content =~ m/🔗/) {
+    $message = "🤖 $content\n\n$url"
+} else {
+    $message = "🤖 $content"
+}
+
 say "Attempting to post: ";
 say "--------------------";
 say $message;
