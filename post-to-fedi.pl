@@ -38,14 +38,22 @@ my $content = $entry->[1];
 
 my $destination
   = "https://${CONFIG{'INSTANCE_HOST'}}/api/v1/statuses?access_token=${CONFIG{'API_ACCESS_TOKEN'}}";
-
+my $message = "🤖 $content";
 # my $message = "🤖 $content\n\n$url";
-my $message;
-if (substr ($content,-1) eq '⤵️'  or $content =~ m/🔗/) {
-    $message = "🤖 $content\n\n$url"
-} else {
-    $message = "🤖 $content"
+#my $message;
+if ($content =~ m/🔗/) {
+    say "==> contains link";
+    $message .= "\n\n$url";
+} elsif ($content =~ /⤵️$/) {
+    say "==> is continuation";
+    $message .= "\n\n$url";
+} elsif ($content =~ /🔚$/) {
+    say "==> single line";
+} else { # fallthrough
+    say "==> no match";
+    $message .= "\n\n$url";    
 }
+
 
 say "Attempting to post: ";
 say "--------------------";
