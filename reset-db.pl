@@ -32,7 +32,7 @@ my $sth = $dbh->prepare( $sql );
 
 my $f = get_feed();
 
-for my $url (keys %$f) {
+for my $url (sort keys %$f) {
     say "==> $url";
     $sth->execute( $url, 1, $f->{$url}{ts}, $f->{$url}{content}) or die $DBI::errstr;
     
