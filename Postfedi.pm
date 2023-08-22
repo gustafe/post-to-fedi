@@ -8,6 +8,7 @@ use DBI;
 use LWP::UserAgent;
 use JSON;
 use HTML::TreeBuilder;
+use HTML::FormatText::WithLinks;
 use Time::Piece;
 #use DateTime;
 #use URI;
@@ -22,7 +23,7 @@ $VERSION = 1.00;
 @ISA     = qw/Exporter/;
 @EXPORT  = ();
 @EXPORT_OK =
-  qw/get_dbh get_ua $sql $ua sec_to_dhms get_feed/;
+  qw/get_dbh get_ua $sql $ua sec_to_dhms get_feed get_feed_md/;
 %EXPORT_TAGS = ( DEFAULT => [qw/&get_dbh &get_ua/] );
 
 my $dsn = "DBI:SQLite:dbname=/home/gustaf/prj/Post-to-fedi/database.db";
@@ -50,7 +51,7 @@ sub get_ua {
 
     return $ua;
 }
-sub get_feed {
+sub get_feed_tree {
     my $ua = get_ua;
     my $r = $ua->get('https://gerikson.com/m/feed.json');
     
@@ -85,6 +86,68 @@ sub get_feed {
     }
 	$feed_data->{$item->{url}}={content=>$content, ts=>$ts->epoch+6*60*60};
     }
+    return $feed_data;
+}
+sub get_feed {
+    my $ua = get_ua;
+    my $r = $ua->get('https://gerikson.com/m/feed.json');
+    
+    if (!$r->is_success() or $r->header('Content-Type') !~ m{application/json}) {
+	    warn "no results returned for feed URL!";
+	    return {};
+	}
+    
+
+#    my $json = JSON->new();
+    my $feed = decode_json( $r->decoded_content() );
+    my $f = HTML::FormatText::WithLinks->new(
+					     before_link=>'',
+					     after_link=>' [%n]',
+					     leftmargin=>0,
+					     rightmargin=>500,
+					     with_emphasis=>1,
+					     italic_marker=>'*',
+					     bold_marker=>'**');
+ 
+    my $feed_data;
+    for my $item (@{$feed->{items}}) {
+
+	my $ts1 = $item->{date_published};
+	$ts1 =~ s/:(\d+)$/$1/;
+	my $ts=Time::Piece->strptime($ts1,"%FT%T%z");
+
+	my $text = $f->parse( $item->{content_html} );
+	my @paras = split(/[\r\n]{1,}/,$text);
+	@paras = grep { $_ ne ''} @paras;
+	my $content;
+
+	# one line entry
+	if (scalar @paras == 1 ) {
+	    $content = shift @paras;
+	    if (length( $content ) >500 ) { # too long for masto
+		$content = substr($content,0,500-6);
+		$content .= ' […]⤵️';
+	    } else {
+		$content .= ' 🔚';
+	    }
+	} else {
+	    if ($paras[0] =~ m/\[1\]$/) { # link on first line
+		my ($url) = grep {$_=~ m/^1\./} @paras;
+		$url =~ s/^1\. //;
+		my $link = $paras[0];
+		$link =~ s/\[1\]$//;
+		$content = $link . "\n\n<" .$url.">";
+		if (scalar @paras > 2) {
+		    $content .= "\n\n⤵️";
+		}
+	    } else {
+		$content = $paras[0] . ' ⤵️';
+	    }
+	}
+	$feed_data->{$item->{url}}={content=>$content, ts=>$ts->epoch+6*60*60};
+    }
+	
+
     return $feed_data;
 }
 
