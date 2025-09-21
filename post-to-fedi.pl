@@ -37,23 +37,26 @@ my $url     = $entry->[0];
 my $content = $entry->[1];
 
 my $destination
-  = "https://${CONFIG{'INSTANCE_HOST'}}/api/v1/statuses?access_token=${CONFIG{'API_ACCESS_TOKEN'}}";
-my $message = "🤖 $content";
-# my $message = "🤖 $content\n\n$url";
-#my $message;
-if ($content =~ m/🔗/) {
+    = "https://${CONFIG{'INSTANCE_HOST'}}/api/v1/statuses?access_token=${CONFIG{'API_ACCESS_TOKEN'}}";
+my $message = "🤖\n\n$content";
+my $footer  = "\n\nblog permalink: $url";
+
+if ( $content =~ m/🔗/ ) {
     say "==> contains link";
-    $message .= "\n\n$url";
-} elsif ($content =~ /⤵️$/) {
+    $message .= $footer;
+} elsif ( $content =~ /⤵️$/ ) {
     say "==> is continuation";
-    $message .= "\n\n$url";
-} elsif ($content =~ /🔚$/) {
+    $message .= $footer;
+} elsif ( $content =~ /🔚$/ ) {
     say "==> single line";
-} else { # fallthrough
+} else {    # fallthrough
     say "==> no match";
-    $message .= "\n\n$url";    
+    $message .= $footer;
 }
 
+if ( length($message) > 500 ) {
+    die "content is too big for a Fedi post!";
+}
 
 say "Attempting to post: ";
 say "--------------------";
@@ -73,7 +76,7 @@ if ( $response->is_success ) {
     my $sth = $dbh->prepare( $sql->{update_status} ) or warn $dbh->errstr;
     $sth->execute($url);
     print "... done!\n";
-}
-else {
+} else {
     print STDERR "Failed: ", $response->status_line, "\n";
+
 }
