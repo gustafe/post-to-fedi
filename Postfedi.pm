@@ -19,7 +19,7 @@ $VERSION     = 1.00;
 @EXPORT_OK   = qw/get_dbh get_ua $sql $ua sec_to_dhms get_feed get_feed_md/;
 %EXPORT_TAGS = ( DEFAULT => [qw/&get_dbh &get_ua/] );
 
-my $debug = 1;
+my $debug = 0;
 
 my $dsn = "DBI:SQLite:dbname=/home/gustaf/prj/Post-to-fedi/database.db";
 
@@ -140,7 +140,7 @@ sub get_feed {
                 $content = substr( $content, 0, 500 - 10 );
                 $content .= ' […]⤵️';
             } else {
-                $content .= "\n🔚";
+                $content .= "\n\n🔚";
             }
         } else {    #more content
             if ( $paras[0] =~ m/\[1\]$/ ) {    # link on first line
